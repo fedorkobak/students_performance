@@ -15,10 +15,19 @@ logging.info("Unzipping...")
 with ZipFile(file=archive_path, mode="r") as f:
     f.extractall(csv_path)
 
-logging.info("Converting to parquet...")
-pd.read_csv(csv_path/"train.csv").to_parquet(tmp_path/"train.parquet")
-pd.read_csv(
-    csv_path/"train_labels.csv"
-).to_parquet(
-    tmp_path/"train_labels.parquet"
+logging.info("Loading csv...")
+train = pd.read_csv(csv_path/"train.csv")
+train_labels = pd.read_csv(csv_path/"train_labels.csv")
+
+logging.info("Preprocessing...")
+train_labels[["session_id", "question_id"]] = (
+    train_labels["session_id"].str.extract(r"(\d+)_q(\d+)")
+    .apply(lambda col: col.astype("int"))
 )
+train_labels = train_labels[
+    ['session_id', 'question_id', 'correct', ]
+]
+
+logging.info("Converting to parquet...")
+train.to_parquet(tmp_path/"train.parquet")
+train_labels.to_parquet(tmp_path/"train_labels.parquet")
