@@ -6,7 +6,6 @@ import torch
 from torch.utils.data import Dataset
 
 
-
 class SessionsDataSet(Dataset):
     """
     The dataset that takes a table of sessions and, in each iteration, returns
