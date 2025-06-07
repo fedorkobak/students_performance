@@ -18,25 +18,40 @@ class SessionsDataSet(Dataset):
     Parameters
     ----------
     df: pd.DataFrame
+    raw_features: list[str]
+        A set of features that must not be transformed.
+    cat_features_encoder: OrdinalEncoder
+        Object that transforms categorial features.
     """
 
-    cat_features_encoder: OrdinalEncoder | None = None
-
-    def __init__(self, df: pd.DataFrame):
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        raw_features: list[str],
+        cat_features_encoder: OrdinalEncoder
+    ):
         super().__init__()
-        if self.cat_features_encoder is None:
-            raise ValueError("`cat_features_encoder` doesn't defined.")
+        self.df = df
+        self.cat_features_encoder = cat_features_encoder
+        self.raw_features = raw_features
+
         self.sessions_ids = df["session_id"].unique()
 
     def __len__(self) -> int:
         return len(self.sessions_ids)
 
     def __getitem__(self, index: int) -> torch.Tensor:
-        return super().__getitem__(index)
+        sessions_for_id = self.df.loc[
+            self.df['session_id'] == self.sessions_ids[index]
+        ]
+        raw_features = torch.tensor(sessions_for_id[self.raw_features].values)
+        cat_features = torch.tensor(self.cat_features_encoder.transform(
+            sessions_for_id[self.cat_features_encoder.feature_names_in_]
+        ))
+        return torch.concat([raw_features, cat_features], axis=1)
 
-    @classmethod
-    def transform_categorial(cls, df: pd.DataFrame) -> torch.Tensor:
-        features = cls.cat_features_encoder.feature_names_in_
+    def transform_categorial(self, df: pd.DataFrame) -> torch.Tensor:
+        features = self.cat_features_encoder.feature_names_in_
         return torch.tensor(
-            cls.cat_features_encoder.transform(df[features])
+            self.cat_features_encoder.transform(df[features])
         )
