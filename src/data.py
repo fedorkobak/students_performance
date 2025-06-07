@@ -6,9 +6,6 @@ import torch
 from torch.utils.data import Dataset
 
 
-def data_to_tenor(data: pd.DataFrame) -> torch.Tensor:
-    pass
-
 
 class SessionsDataSet(Dataset):
     """
