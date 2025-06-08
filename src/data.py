@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
 
 import torch
+import torch.utils
 from torch.utils.data import Dataset
 
 
@@ -120,4 +121,8 @@ def collate_sessions(
             - size of the vector that represents the action.
         - Answers to the qestions collated to the batch.
     """
-    pass
+    X = torch.nn.utils.rnn.pad_sequence(
+        [u[0] for u in units], batch_first=True
+    )
+    y = torch.stack([u[1] for u in units])
+    return X, y
