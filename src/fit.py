@@ -1,11 +1,17 @@
 import pickle
+import logging
 import pandas as pd
 from pathlib import Path
+
+import torch
 from sklearn.preprocessing import OrdinalEncoder
+import torch.utils
 
 from src.data import SessionsDataSet
 
+logging.basicConfig(level=logging.INFO)
 
+logging.info("Processing data...")
 train = pd.read_parquet(Path()/".tmp"/"train.parquet")
 
 # Counting a delay of the event
@@ -27,6 +33,7 @@ ordinal_encoder = OrdinalEncoder().fit(train[[
 with open("src/ordinal_encoder.pkl", "wb") as f:
     pickle.dump(ordinal_encoder, f)
 
+logging.info("Constructing dataset...")
 
 sessions_dataset = SessionsDataSet(
     df=train,
@@ -40,4 +47,10 @@ sessions_dataset = SessionsDataSet(
         "hover_duration"
     ],
     cat_features_encoder=ordinal_encoder
+)
+
+train, test = torch.utils.data.random_split(
+    sessions_dataset,
+    [0.8, 0.2],
+    generator=torch.Generator().manual_seed(1)
 )
