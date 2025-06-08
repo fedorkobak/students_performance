@@ -31,10 +31,10 @@ class SessionsDataSet(Dataset):
         cat_features_encoder: OrdinalEncoder
     ):
 
-        if len(labels) != len(df):
+        if set(labels["session_id"]) != set(df["session_id"]):
             raise ValueError(
-                "The number of elements in the `df` and the `labels` must be ",
-                "the same"
+                "`df` and `lables` must have the same elements set of "
+                "`session_id`"
             )
         if "session_id" not in df.columns:
             raise ValueError("`session_id` wasn't found in the `df`")
