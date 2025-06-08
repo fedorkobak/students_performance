@@ -16,7 +16,7 @@ class TestSessionsDataSet(TestCase):
     })
     test_labels = pd.DataFrame({
         "session_id": [1, 1, 1, 2, 2, 2],
-        "question_id": [1, 2, 3, 1, 2, 3],
+        "question_id": [1, 3, 2, 1, 2, 3],
         "correct": [0, 1, 0, 1, 0, 1]
     })
     encoder = OrdinalEncoder().fit(test_data[["a"]])
@@ -41,10 +41,6 @@ class TestSessionsDataSet(TestCase):
         torch.testing.assert_close(ans_X, exp_X)
 
         exp_y = torch.tensor(
-            self
-            .test_labels.loc[self.test_labels["session_id"] == 1]
-            .sort_values("question_id")
-            .values,
-            dtype=torch.float32
+            [0, 0, 1], dtype=torch.float32
         )
         torch.testing.assert_close(ans_y, exp_y)

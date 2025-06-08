@@ -85,6 +85,7 @@ class SessionsDataSet(Dataset):
         y = torch.tensor(
             self.labels.loc[self.labels["session_id"] == my_id]
             .sort_values("question_id")
+            .loc[:, "correct"]
             .values,
             dtype=torch.float32
         )
