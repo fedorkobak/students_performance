@@ -97,3 +97,27 @@ class SessionsDataSet(Dataset):
         return torch.tensor(
             self.cat_features_encoder.transform(df[features])
         )
+
+
+def collate_sessions(
+    units: list[tuple[torch.Tensor, torch.Tensor]]
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Collate the units of the `SessionDataset`.
+
+    Parameters
+    ----------
+    units: list[tuple[torch.Tensor, torch.Tensor]]
+        List of items of the `SessionDataSet`.
+
+    Returns
+    -------
+    tuple[torch.Tensor, torch.Tensor]
+        - Sessions padded to the max session and concatenated. So the
+        dimentinality of the output is:
+            - len of units (batch size).
+            - max seqence len.
+            - size of the vector that represents the action.
+        - Answers to the qestions collated to the batch.
+    """
+    pass

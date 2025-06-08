@@ -4,7 +4,7 @@ import pandas as pd
 from unittest import TestCase
 from sklearn.preprocessing import OrdinalEncoder
 
-from src.data import SessionsDataSet
+from src.data import SessionsDataSet, collate_sessions
 
 
 class TestSessionsDataSet(TestCase):
@@ -44,3 +44,42 @@ class TestSessionsDataSet(TestCase):
             [0, 0, 1], dtype=torch.float32
         )
         torch.testing.assert_close(ans_y, exp_y)
+
+
+class TestCollateSessions(TestCase):
+    def test_collation(self):
+        sequences = [
+            torch.tensor([
+                [1, 2, 3, 4],
+                [5, 3, 2, 7]
+            ]),
+            torch.tensor([
+                [3, 3, 3, 1]
+            ])
+        ]
+        y = [
+            torch.tensor([1, 0, 1]),
+            torch.tensor([0, 0, 0])
+        ]
+        inp = [(sequences[0], y[0]), (sequences[1], y[1])]
+
+        ans = collate_sessions(inp)
+        exp = (
+            torch.tensor([
+                [
+                    [1, 2, 3, 4],
+                    [5, 3, 2, 7]
+                ],
+                [
+                    [3, 3, 3, 1],
+                    [0, 0, 0, 0]
+                ]
+            ]),
+            torch.tensor([
+                [1, 0, 1],
+                [0, 0, 0]
+            ])
+        )
+
+        torch.testing.assert_close(ans[0], exp[0])
+        torch.testing.assert_close(ans[1], exp[1])
