@@ -16,7 +16,7 @@ class SessionsDataSet(Dataset):
     df: pd.DataFrame
         Must have "session_id" and "elapsed_time" columns.
     labels: pd.DataFrame
-        Must have "session_id" and "question_id" columns.
+        Must have "session_id", "question_id" and "correct" columns.
     raw_features: list[str]
         A set of features that must not be transformed.
     cat_features_encoder: OrdinalEncoder
@@ -37,16 +37,19 @@ class SessionsDataSet(Dataset):
                 "the same"
             )
         if "session_id" not in df.columns:
-            raise ValueError("`session_id` didn't found in the `df`")
+            raise ValueError("`session_id` wasn't found in the `df`")
         if "session_id" not in labels.columns:
-            raise ValueError("`session_id` didn't found in the `labels`")
+            raise ValueError("`session_id` wasn't found in the `labels`")
         if "elapsed_time" not in df.columns:
-            raise ValueError("`elapsed_time` didn't found in the `df`")
+            raise ValueError("`elapsed_time` wasn't found in the `df`")
         if "question_id" not in labels.columns:
-            raise ValueError("`question_id` didn't found in the `labels`")
+            raise ValueError("`question_id` wasn't found in the `labels`")
+        if "correct" not in labels.columns:
+            raise ValueError("`correct` wasn't found in the `labels`")
 
         super().__init__()
         self.df = df
+        self.labels = labels
         self.cat_features_encoder = cat_features_encoder
         self.raw_features = raw_features
 
@@ -64,18 +67,29 @@ class SessionsDataSet(Dataset):
         tuple[torch.Tensor, torch.Tensor]
             - The events of the sessions in order according to the increasing
             of the "elapsed_time".
-            - A 1d vector of labels is sorted in ascending order by lesson.
+            - A 1d vector of labels is sorted in ascending order by question.
         """
 
         my_id = self.sessions_ids[index]
 
-        sessions_for_id = self.df.loc[self.df['session_id'] == my_id]
+        sessions_for_id = (
+            self.df.loc[self.df["session_id"] == my_id]
+            .sort_values("elapsed_time")
+        )
         raw_features = torch.tensor(sessions_for_id[self.raw_features].values)
         cat_features = torch.tensor(self.cat_features_encoder.transform(
             sessions_for_id[self.cat_features_encoder.feature_names_in_]
         ))
+        X = torch.concat([raw_features, cat_features], axis=1)
 
-        return torch.concat([raw_features, cat_features], axis=1)
+        y = torch.tensor(
+            self.labels.loc[self.labels["session_id"] == my_id]
+            .sort_values("question_id")
+            .values,
+            dtype=torch.float32
+        )
+
+        return X, y
 
     def transform_categorial(self, df: pd.DataFrame) -> torch.Tensor:
         features = self.cat_features_encoder.feature_names_in_

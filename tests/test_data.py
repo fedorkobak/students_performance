@@ -10,22 +10,41 @@ from src.data import SessionsDataSet
 class TestSessionsDataSet(TestCase):
     test_data = pd.DataFrame({
         "session_id": [1, 1, 1, 2, 2, 2],
+        "elapsed_time": [1, 3, 2, 4, 5, 6],
         "a": ["a", "b", "c", "a", "b", "c"],
         "b": [1, 2, 3, 4, 5, 6]
+    })
+    test_labels = pd.DataFrame({
+        "session_id": [1, 1, 1, 2, 2, 2],
+        "question_id": [1, 2, 3, 1, 2, 3],
+        "correct": [0, 1, 0, 1, 0, 1]
     })
     encoder = OrdinalEncoder().fit(test_data[["a"]])
     sessions_data_set = SessionsDataSet(
         df=test_data,
+        labels=test_labels,
         raw_features=["b"],
         cat_features_encoder=encoder
     )
 
     def test_item(self):
-        ans = self.sessions_data_set[0]
+        ans_X, ans_y = self.sessions_data_set[0]
 
-        subset = self.test_data.loc[self.test_data["session_id"] == 1]
+        subset = (
+            self
+            .test_data.loc[self.test_data["session_id"] == 1]
+            .sort_values("elapsed_time")
+        )
         raw = torch.tensor(subset[["b"]].values)
         cat = torch.tensor(self.encoder.transform(subset[["a"]]))
-        exp = torch.concat([raw, cat], axis=1)
+        exp_X = torch.concat([raw, cat], axis=1)
+        torch.testing.assert_close(ans_X, exp_X)
 
-        torch.testing.assert_close(ans, exp)
+        exp_y = torch.tensor(
+            self
+            .test_labels.loc[self.test_labels["session_id"] == 1]
+            .sort_values("question_id")
+            .values,
+            dtype=torch.float32
+        )
+        torch.testing.assert_close(ans_y, exp_y)
