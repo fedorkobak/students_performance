@@ -30,13 +30,16 @@ class TestSessionsDataSet(TestCase):
     def test_item(self):
         ans_X, ans_y = self.sessions_data_set[0]
 
-        raw = torch.tensor([1, 3, 2])[:, None]
+        raw = torch.tensor([1, 3, 2], dtype=torch.float32)[:, None]
         subset = (
             self
             .test_data.loc[self.test_data["session_id"] == 1]
             .sort_values("elapsed_time")
         )
-        cat = torch.tensor(self.encoder.transform(subset[["a"]]))
+        cat = torch.tensor(
+            self.encoder.transform(subset[["a"]]),
+            dtype=torch.float32
+        )
         exp_X = torch.concat([raw, cat], axis=1)
         torch.testing.assert_close(ans_X, exp_X)
 

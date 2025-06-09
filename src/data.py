@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder
 
 import torch
-import torch.utils
 from torch.utils.data import Dataset
 
 
@@ -77,10 +76,16 @@ class SessionsDataSet(Dataset):
             self.df.loc[self.df["session_id"] == my_id]
             .sort_values("elapsed_time")
         )
-        raw_features = torch.tensor(sessions_for_id[self.raw_features].values)
-        cat_features = torch.tensor(self.cat_features_encoder.transform(
-            sessions_for_id[self.cat_features_encoder.feature_names_in_]
-        ))
+        raw_features = torch.tensor(
+            sessions_for_id[self.raw_features].values,
+            dtype=torch.float32
+        )
+        cat_features = torch.tensor(
+            self.cat_features_encoder.transform(
+                sessions_for_id[self.cat_features_encoder.feature_names_in_]
+            ),
+            dtype=torch.float32
+        )
         X = torch.concat([raw_features, cat_features], axis=1)
 
         y = torch.tensor(
