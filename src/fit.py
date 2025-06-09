@@ -21,6 +21,18 @@ train["event_delay"] = (
 ).fillna(0)
 train["hover_duration"].fillna(-1)
 
+raw_features = [
+    "event_delay",
+    "level",
+    "page",
+    "room_coor_x",
+    "room_coor_y",
+    "screen_coor_x",
+    "screen_coor_y",
+    "hover_duration"
+]
+train[raw_features] = train[raw_features].fillna(-1)
+
 ordinal_encoder = OrdinalEncoder().fit(train[[
     "event_name",
     "name",
@@ -38,15 +50,7 @@ logging.info("Constructing dataset...")
 sessions_dataset = SessionsDataSet(
     df=train,
     labels=train_labels,
-    raw_features=[
-        "event_delay",
-        "level",
-        "room_coor_x",
-        "room_coor_y",
-        "screen_coor_x",
-        "screen_coor_y",
-        "hover_duration"
-    ],
+    raw_features=raw_features,
     cat_features_encoder=ordinal_encoder
 )
 
