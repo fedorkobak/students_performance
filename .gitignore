@@ -1,3 +1,4 @@
 .tmp
 students_performance.egg-info
 __pycache__
+.env
