@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class BaiscRNN(nn.Module):
+class BasicRNN(nn.Module):
     """
     Basic implementation of the RNN model.
     """

@@ -4,7 +4,7 @@ import pandas as pd
 from unittest import TestCase
 from sklearn.preprocessing import OrdinalEncoder
 
-from src.data import SessionsDataSet, collate_sessions
+from src.data.utils import SessionsDataSet, collate_sessions
 
 
 class TestSessionsDataSet(TestCase):
@@ -47,6 +47,9 @@ class TestSessionsDataSet(TestCase):
             [0, 0, 1], dtype=torch.float32
         )
         torch.testing.assert_close(ans_y, exp_y)
+
+    def test_unit_shape(self):
+        self.assertEqual(self.sessions_data_set.get_unit_shape(), 2)
 
 
 class TestCollateSessions(TestCase):

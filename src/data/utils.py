@@ -55,6 +55,15 @@ class SessionsDataSet(Dataset):
 
         self.sessions_ids = df["session_id"].unique()
 
+    def get_unit_shape(self) -> int:
+        """
+        Get size of vector that describes one event.
+        """
+        return (
+            len(self.raw_features)
+            + len(self.cat_features_encoder.feature_names_in_)
+        )
+
     def __len__(self) -> int:
         return len(self.sessions_ids)
 
