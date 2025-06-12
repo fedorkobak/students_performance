@@ -9,5 +9,6 @@ dependencies = [
     "torch==2.7.0",
     "scikit-learn==1.7.0",
     "python-dotenv==1.1.0",
-    "mlflow==3.0.0"
+    "mlflow==3.0.0",
+    "tqdm==4.67.1"
 ]
