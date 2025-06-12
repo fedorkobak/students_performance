@@ -1,61 +1,25 @@
-import pickle
+import os
+import dotenv
+import mlflow
 import logging
-import pandas as pd
-from pathlib import Path
+import mlflow.pytorch
+import mlflow.sklearn
 
-import torch
-from sklearn.preprocessing import OrdinalEncoder
-import torch.utils
+from src.model import BaiscRNN
+# from src.data import train_dataset, train_loader, ordinal_encoder
 
-from src.data import SessionsDataSet
-
+dotenv.load_dotenv()
+mlflow.set_experiment(os.environ["MLFLOW_EXPERIMENT"])
 logging.basicConfig(level=logging.INFO)
 
-logging.info("Processing data...")
-train = pd.read_parquet(Path()/".tmp"/"train.parquet")
-train_labels = pd.read_parquet(Path()/".tmp"/"train_labels.parquet")
-
-# Counting a delay of the event
-train["event_delay"] = (
-    train["elapsed_time"] - train["elapsed_time"].shift(1)
-).fillna(0)
-train["hover_duration"].fillna(-1)
-
-raw_features = [
-    "event_delay",
-    "level",
-    "page",
-    "room_coor_x",
-    "room_coor_y",
-    "screen_coor_x",
-    "screen_coor_y",
-    "hover_duration"
-]
-train[raw_features] = train[raw_features].fillna(-1)
-
-ordinal_encoder = OrdinalEncoder().fit(train[[
-    "event_name",
-    "name",
-    "text",
-    "fqid",
-    "room_fqid",
-    "text_fqid",
-    "level_group"
-]])
-with open("src/ordinal_encoder.pkl", "wb") as f:
-    pickle.dump(ordinal_encoder, f)
-
-logging.info("Constructing dataset...")
-
-sessions_dataset = SessionsDataSet(
-    df=train,
-    labels=train_labels,
-    raw_features=raw_features,
-    cat_features_encoder=ordinal_encoder
+unit_size = train_dataset[0][0].shape[1]
+model = BaiscRNN(
+    input_size=unit_size,
+    hidden_size=unit_size*2,
+    output_size=18,
+    num_layers=1
 )
 
-train, test = torch.utils.data.random_split(
-    sessions_dataset,
-    [0.8, 0.2],
-    generator=torch.Generator().manual_seed(1)
-)
+with mlflow.start_run():
+    mlflow.pytorch.log_model(model)
+    mlflow.sklearn.log_model(ordinal_encoder, "ordinal_encoder")
