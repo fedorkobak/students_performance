@@ -1,4 +1,5 @@
 import pandas as pd
+import multiprocessing
 from pathlib import Path
 
 import torch
@@ -51,9 +52,9 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     return train, train_labels
 
 
-def get_loaders() -> tuple[td.DataLoader, td.DataLoader]:
+def get_datasets() -> tuple[td.Dataset, td.Dataset]:
     """
-    Get train and test data loaders.
+    Get test and train datasets.
     """
     data, labels = load_data()
 
@@ -71,16 +72,42 @@ def get_loaders() -> tuple[td.DataLoader, td.DataLoader]:
         [0.8, 0.2],
         generator=torch.Generator().manual_seed(1)
     )
+    return train_dataset, test_dataset
 
-    batch_size = 32
+
+def get_loaders(
+    batch_size: int,
+    num_workers: int = multiprocessing.cpu_count(),
+    datasets: tuple[td.Dataset, td.Dataset] | None = None
+) -> tuple[td.DataLoader, td.DataLoader]:
+    """
+    Get train and test data loaders.
+
+    Parameters
+    ----------
+    batch_size: int
+        Number of the observations in the single batch.
+    num_workers: int
+        Number of workers that can be used by the loaders.
+    datasets: tuple[td.Dataset, td.Dataset] | None
+        Train and test datasets.
+        If `None`, `get_datasets` will be used to get datasets.
+    """
+    if datasets is None:
+        train_dataset, test_dataset = get_datasets()
+    else:
+        train_dataset, test_dataset = datasets
+
     train_loader = td.DataLoader(
         train_dataset,
         batch_size=batch_size,
-        collate_fn=collate_sessions
+        collate_fn=collate_sessions,
+        num_workers=num_workers
     )
     test_loader = td.DataLoader(
         test_dataset,
         batch_size=batch_size,
-        collate_fn=collate_sessions
+        collate_fn=collate_sessions,
+        num_workers=num_workers
     )
     return train_loader, test_loader
