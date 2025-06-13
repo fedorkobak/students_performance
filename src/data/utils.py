@@ -48,8 +48,15 @@ class SessionsDataSet(Dataset):
             raise ValueError("`correct` wasn't found in the `labels`")
 
         super().__init__()
-        self.df = df
-        self.labels = labels
+        # Grouping data reduces access time
+        self.groped_df = {
+            id: sub_set.sort_values("elapsed_time")
+            for id, sub_set in df.groupby("session_id")
+        }
+        self.groped_labels = {
+            id: sub_set.sort_values("question_id")
+            for id, sub_set in labels.groupby("session_id")
+        }
         self.cat_features_encoder = cat_features_encoder
         self.raw_features = raw_features
 
@@ -81,10 +88,7 @@ class SessionsDataSet(Dataset):
 
         my_id = self.sessions_ids[index]
 
-        sessions_for_id = (
-            self.df.loc[self.df["session_id"] == my_id]
-            .sort_values("elapsed_time")
-        )
+        sessions_for_id = self.groped_df[my_id]
         raw_features = torch.tensor(
             sessions_for_id[self.raw_features].values,
             dtype=torch.float32
@@ -98,8 +102,7 @@ class SessionsDataSet(Dataset):
         X = torch.concat([raw_features, cat_features], axis=1)
 
         y = torch.tensor(
-            self.labels.loc[self.labels["session_id"] == my_id]
-            .sort_values("question_id")
+            self.groped_labels[my_id]
             .loc[:, "correct"]
             .values,
             dtype=torch.float32
