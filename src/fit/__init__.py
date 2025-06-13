@@ -1,10 +1,13 @@
 import tqdm
 import mlflow
+import typing
 
 from src.data import get_loaders
 
 import torch
 import torch.utils.data as td
+
+from sklearn.metrics import roc_auc_score
 
 loss_function = torch.nn.BCELoss()
 
@@ -23,7 +26,7 @@ def epoch(
     model: torch.nn.Module,
         Model to be trained.
     optimizer: torch.optim.Optimizer,
-        The optimizer must be used to train the model.
+        The optimizer.
     data: torch.utils.data.DataLoader,
         Data is needed to train the model.
     tqdm_desc: str | None
@@ -48,26 +51,83 @@ def epoch(
     return losses
 
 
-def compute_loss(
+def evaluate(
     model: torch.nn.Module,
     data: torch.utils.data.DataLoader,
     tqdm_desc: str | None = None
-) -> float:
+) -> tuple[float, float]:
     """
-    Compute loss of the given model on the given data.
+    Computes the BSE loss and ROC AUC of the model on given model.
+
+    Parameters
+    ----------
     model: torch.nn.Module,
         Model to be evaluated.
     data: torch.utils.data.DataLoader,
         The data on which the model must be evaluated.
     tqdm_desc: str | None = None
         Message for progress bar.
+
+    Returns
+    -------
+    tuple[float, float]
+        BCE loss and ROC AUC.
     """
     model = model.eval().requires_grad_(False)
 
     processed = [(model(X), y) for X, y in tqdm.tqdm(data, desc=tqdm_desc)]
     p = torch.cat([v[0] for v in processed], dim=0)
     y = torch.cat([v[1] for v in processed], dim=0)
-    return float(loss_function(p, y))
+    return float(loss_function(p, y)), roc_auc_score(y_true=y, y_score=y)
+
+
+def train_loop(
+    epochs: int,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loaders: tuple[td.DataLoader, td.DataLoader]
+) -> typing.Generator[tuple[int, float, float, float, float]]:
+    """
+    Generator each step of wich is an epoch of model training with evaluation.
+
+    Parameters
+    ----------
+    model: torch.nn.Module,
+        Model to be trained.
+    optimizer: torch.optim.Optimizer,
+        The optimizer.
+    loaders: tuple[td.DataLoader, td.DataLoader]
+        Train and test loaders accordingly.
+
+    Returns
+    -------
+    typing.Generator[tuple[int, float, float, float, float]]
+        - Epoch number.
+        - Train BCE.
+        - Train ROC AUC.
+        - Test BCE.
+        - Test ROC AUC.
+    """
+    train_loader, test_loader = loaders
+    for e in range(epochs):
+        epoch(
+            model=model,
+            optimizer=optimizer,
+            data=train_loader,
+            tqdm_desc="Training model"
+        )
+        test_loss, test_auc = evaluate(
+            model=model,
+            data=test_loader,
+            tqdm_desc="Evaluating on test"
+        )
+        train_loss, train_auc = evaluate(
+            model=model,
+            data=train_loader,
+            tqdm_desc="Evaluating on train"
+        )
+
+        yield e, train_loss, train_auc, test_loss, test_auc
 
 
 def fit(
@@ -103,26 +163,23 @@ def fit(
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     with mlflow.start_run():
-        for e in range(epochs):
-            epoch(
-                model=model,
-                optimizer=optimizer,
-                data=train_loader,
-                tqdm_desc="Training model"
-            )
 
-            test_loss = compute_loss(
-                model=model,
-                data=test_loader,
-                tqdm_desc="Evaluating on test"
+        t_loop = train_loop(
+            epochs=epochs,
+            model=model,
+            optimizer=optimizer,
+            loaders=(train_loader, test_loader)
+        )
+        for e, train_loss, train_auc, test_loss, test_auc in t_loop:
+            mlflow.log_metrics(
+                {
+                    "BCE_test": test_loss,
+                    "BCE_train": train_loss,
+                    "AUC_test": test_auc,
+                    "AUC_train": train_auc
+                },
+                step=(e + 1)
             )
-            train_loss = compute_loss(
-                model=model,
-                data=train_loader,
-                tqdm_desc="Evaluating on train"
-            )
-            mlflow.log_metric("BCE_test", test_loss, step=(e + 1))
-            mlflow.log_metric("BCE_train", train_loss, step=(e + 1))
 
         mlflow.pytorch.log_model(model, "model")
         mlflow.sklearn.log_model(
