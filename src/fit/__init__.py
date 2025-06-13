@@ -138,7 +138,8 @@ def fit(
     epochs: int
 ):
     """
-    Fit model.
+    Fits model and logs fitting process to mlflow.
+    Note: supposed to be used in the mlflow run context.
 
     Parameters
     ----------
@@ -153,6 +154,8 @@ def fit(
     epochs: int
         Number of epochs.
     """
+    if mlflow.active_run() is None:
+        raise ValueError("Mlflow context didn't found.")
 
     train_loader, test_loader = get_loaders(
         datasets=data_sets,
@@ -162,27 +165,30 @@ def fit(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    with mlflow.start_run():
+    mlflow.log_params({
+        "batch_size": batch_size,
+        "lr": lr
+    })
 
-        t_loop = train_loop(
-            epochs=epochs,
-            model=model,
-            optimizer=optimizer,
-            loaders=(train_loader, test_loader)
+    t_loop = train_loop(
+        epochs=epochs,
+        model=model,
+        optimizer=optimizer,
+        loaders=(train_loader, test_loader)
+    )
+    for e, train_loss, train_auc, test_loss, test_auc in t_loop:
+        mlflow.log_metrics(
+            {
+                "BCE_test": test_loss,
+                "BCE_train": train_loss,
+                "AUC_test": test_auc,
+                "AUC_train": train_auc
+            },
+            step=(e + 1)
         )
-        for e, train_loss, train_auc, test_loss, test_auc in t_loop:
-            mlflow.log_metrics(
-                {
-                    "BCE_test": test_loss,
-                    "BCE_train": train_loss,
-                    "AUC_test": test_auc,
-                    "AUC_train": train_auc
-                },
-                step=(e + 1)
-            )
 
-        mlflow.pytorch.log_model(model, "model")
-        mlflow.sklearn.log_model(
-            dataset.cat_features_encoder,
-            "ordinal_encoder"
-        )
+    mlflow.pytorch.log_model(model, "model")
+    mlflow.sklearn.log_model(
+        dataset.cat_features_encoder,
+        "ordinal_encoder"
+    )
