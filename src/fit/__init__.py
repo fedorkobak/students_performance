@@ -1,4 +1,6 @@
 import tqdm
+import math
+import copy
 import mlflow
 import typing
 
@@ -78,7 +80,7 @@ def evaluate(
     processed = [(model(X), y) for X, y in tqdm.tqdm(data, desc=tqdm_desc)]
     p = torch.cat([v[0] for v in processed], dim=0)
     y = torch.cat([v[1] for v in processed], dim=0)
-    return float(loss_function(p, y)), roc_auc_score(y_true=y, y_score=y)
+    return float(loss_function(p, y)), roc_auc_score(y_true=y, y_score=p)
 
 
 def train_loop(
@@ -140,6 +142,7 @@ def fit(
     """
     Fits model and logs fitting process to mlflow.
     Note: supposed to be used in the mlflow run context.
+    Note: model with the best RocAUC will be logged.
 
     Parameters
     ----------
@@ -176,6 +179,7 @@ def fit(
         optimizer=optimizer,
         loaders=(train_loader, test_loader)
     )
+    best_auc = -math.inf
     for e, train_loss, train_auc, test_loss, test_auc in t_loop:
         mlflow.log_metrics(
             {
@@ -186,9 +190,12 @@ def fit(
             },
             step=(e + 1)
         )
+        if test_auc > best_auc:
+            best_auc = test_auc
+            best_model = copy.deepcopy(model)
 
-    mlflow.pytorch.log_model(model, "model")
+    mlflow.pytorch.log_model(best_model, name="model")
     mlflow.sklearn.log_model(
         dataset.cat_features_encoder,
-        "ordinal_encoder"
+        name="ordinal_encoder"
     )

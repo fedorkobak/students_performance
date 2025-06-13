@@ -34,5 +34,5 @@ with mlflow.start_run():
         model=model,
         batch_size=64,
         lr=1e-4,
-        epochs=1
+        epochs=30
     )
