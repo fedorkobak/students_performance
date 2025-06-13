@@ -46,7 +46,6 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     train["event_delay"] = (
         train["elapsed_time"] - train["elapsed_time"].shift(1)
     ).fillna(0)
-    train["hover_duration"].fillna(-1)
 
     train[raw_features] = train[raw_features].fillna(-1)
     return train, train_labels
