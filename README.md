@@ -4,6 +4,8 @@ Solution for the kaggle competition "[Predict Student Performance from Game Play
 
 Check the mlflow server at `http://93.125.49.123:49998` for experiments. Use username and password from `.env` to login.
 
+**The report describing the experiments** can be found in the ["analysis"](analysis.ipynb) notebook.
+
 Run tests with `python -m unittest`.
 
 ## Dev deploy
