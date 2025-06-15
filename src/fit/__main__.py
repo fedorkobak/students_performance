@@ -29,6 +29,7 @@ logging.basicConfig(level=logging.INFO)
 
 torch.manual_seed(1)
 torch.use_deterministic_algorithms(True)
+torch.multiprocessing.set_sharing_strategy("file_system")
 
 logging.info("Loading data...")
 train_dataset, test_dataset = get_datasets()
