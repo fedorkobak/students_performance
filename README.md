@@ -6,8 +6,6 @@ Check the mlflow server at `http://93.125.49.123:49998` for experiments. Use use
 
 **The report describing the experiments** can be found in the ["analysis"](analysis.ipynb) notebook.
 
-Run tests with `python -m unittest`.
-
 ## Dev deploy
 
 To deploy development envrionment use:
@@ -23,3 +21,9 @@ MLFLOW_TRACKING_USERNAME="IFORTEX"
 MLFLOW_TRACKING_PASSWORD="ifortex_cred"
 MLFLOW_EXPERIMENT="ifortex_test_task"
 ```
+
+## Run
+
+Run the model fitting with `python3 -m src.fit`. To get help on the fit parameters, use `python3 -m src.fit --help`.
+
+Run tests with `python -m unittest`.
