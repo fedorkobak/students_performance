@@ -24,6 +24,13 @@ MLFLOW_EXPERIMENT="ifortex_test_task"
 
 ## Run
 
-Run the model fitting with `python3 -m src.fit`. To get help on the fit parameters, use `python3 -m src.fit --help`.
+Run the model fitting with `python3 -m src.fit`. To get help on the fit parameters, use `python3 -m src.fit --help`. Two models are implemented:
+
+- Recurrent: `python -m src.fit rnn --help`.
+- Transformer: `python -m src.fit transformer --help`.
+
+For example, run the 10 epochs fitting process for the transformer model with two heads with command:
+
+`python3 -m src.fit --epochs 10 transformer --nhead 2`
 
 Run tests with `python -m unittest`.
