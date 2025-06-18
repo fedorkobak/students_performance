@@ -29,3 +29,49 @@ class BasicRNN(nn.Module):
         rnn_out = self.rnn(X)[-1][-1]
         linear_out = self.linear(rnn_out)
         return torch.sigmoid(linear_out)
+
+
+class TransformerEncoding(nn.Module):
+    """
+    This is a model that is supposed to use a transformer-like encoder.
+
+    Parameters
+    ----------
+    d_model: int
+        Dimensionality of the model. It is actually the dimentionality of the
+        one unit of the sequence that is supposed to be processed.
+    dim_feedforward: int
+        Dimentionality of the feed forward layer of transformer.
+    nhead: int
+        Number of transformer heads.
+    num_layers: int
+        Number of transformers layers to be stacked.
+    """
+    def __init__(
+        self,
+        d_model: int,
+        dim_feedforward: int,
+        nhead: int,
+        num_layers: int,
+        output_size: int
+    ):
+        super().__init__()
+        self.transformer_encoder = torch.nn.TransformerEncoder(
+            encoder_layer=torch.nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                batch_first=True,
+                dim_feedforward=dim_feedforward
+            ),
+            num_layers=num_layers,
+            enable_nested_tensor=False
+        )
+        self.linear = nn.Linear(
+            in_features=d_model,
+            out_features=output_size
+        )
+
+    def forward(self, X: torch.Tensor) -> torch.Tensor:
+        encoded = self.transformer_encoder(X)
+        logits = self.linear(encoded.mean(dim=-2))
+        return torch.sigmoid(logits)
