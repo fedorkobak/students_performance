@@ -5,39 +5,62 @@ import torch
 from unittest import TestCase
 from model import BasicRNN, TransformerEncoding
 
+torch.random.manual_seed(1)
 
-class TestOut(TestCase):
-    """
-    Check the properties of the output of the models.
-    """
-    torch.random.manual_seed(1)
-    # parameters of the tensors
-    # supposed that the input would be a batch with <batch_size> seqeunces of
-    # <seqence_size> elements, each of which would be <input_size>-dimensional
-    # elements.
-    batch_size = 4
-    sequence_size = 10
+
+class TestModels(TestCase):
+    '''
+    This is a class that is supposed to be a parent class. It simply defines
+    instances of the models that have to be tested in child classes.
+
+    Attributes
+    ----------
+    input_size: int
+        Dimentionality of the one element of the sequences taht will be
+        processed by the models.
+    ouput_size: int
+        Dementinality of the ouput of the models.
+    '''
     input_size = 15
     output_size = 18
-    # input example that represents all
-    input_example = torch.rand(batch_size, sequence_size, input_size)
-
-    # outputs of models which properties have to be checked
-    outputs = {
+    models = {
         "basic_rnn": BasicRNN(
             input_size=input_size,
             hidden_size=5,
             output_size=output_size,
             num_layers=1
-        )(input_example),
+        ),
         "transformer_encoding": TransformerEncoding(
             d_model=input_size,
             dim_feedforward=1,
             nhead=1,
             num_layers=1,
             output_size=output_size
-        )(input_example)
+        )
     }
+
+
+class TestOutProperties(TestModels):
+    """
+    Check the properties of the output of the models.
+    """
+    # parameters of the tensors
+    # supposed that the input would be a batch with <batch_size> seqeunces of
+    # <seqence_size> elements, each of which would be <input_size>-dimensional
+    # elements.
+    batch_size = 4
+    sequence_size = 10
+    # input example that represents all
+    input_example = torch.rand(
+        batch_size,
+        sequence_size,
+        TestModels.input_size
+    )
+
+    # outputs of models which properties have to be checked
+    outputs = {}
+    for name, model in TestModels.models.items():
+        outputs[name] = model(input_example)
 
     def test_shape(self):
         """
