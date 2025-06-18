@@ -29,6 +29,15 @@ transformer_parser = subparsers.add_parser("transformer")
 transformer_parser.add_argument("--dim-feedforward", type=int, default=256)
 transformer_parser.add_argument("--nhead", type=int, default=1)
 transformer_parser.add_argument("--num-layers", type=int, default=1)
+transformer_parser.add_argument(
+    "--max-seq-length",
+    type=int,
+    default=5000,
+    help=(
+        "Maximum length of the sequence that can be processed. ",
+        "Set a smaller value to save RAM."
+    )
+)
 
 args = parser.parse_args()
 
@@ -43,7 +52,10 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 logging.info("Loading data...")
 train_dataset, test_dataset = get_datasets()
 
-with mlflow.start_run(run_name=args.run_name):
+with mlflow.start_run(
+    run_name=args.run_name,
+    log_system_metrics=True
+):
 
     input_size = train_dataset.dataset.get_unit_shape()
     if args.model == "rnn":
@@ -61,14 +73,16 @@ with mlflow.start_run(run_name=args.run_name):
         mlflow.log_params({
             "dim_feedforward": args.dim_feedforward,
             "nhead": args.nhead,
-            "num_layers": args.num_layers
+            "num_layers": args.num_layers,
+            "max_seq_length": args.max_seq_length
         })
         model = TransformerEncoding(
             d_model=input_size,
             dim_feedforward=args.dim_feedforward,
             nhead=args.nhead,
             num_layers=args.num_layers,
-            output_size=18
+            output_size=18,
+            max_seq_length=args.max_seq_length
         )
 
     logging.info("Fitting model...")

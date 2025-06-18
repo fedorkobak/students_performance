@@ -43,6 +43,15 @@ class TestModels(TestCase):
 class TestOutProperties(TestModels):
     """
     Check the properties of the output of the models.
+
+    Parameters
+    ----------
+    batch_size: int
+        Size of the batch of the example input.
+    sequence_size: int
+        Size seqences size of the example input.
+    input_example: torch.tensor
+        Example input.
     """
     # parameters of the tensors
     # supposed that the input would be a batch with <batch_size> seqeunces of

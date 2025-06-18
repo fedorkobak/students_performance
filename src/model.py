@@ -46,6 +46,9 @@ class TransformerEncoding(nn.Module):
         Number of transformer heads.
     num_layers: int
         Number of transformers layers to be stacked.
+    max_seq_length: int
+        Maximum length of the sequence that will be processed.
+        All later sequence elements will be deblocked in forward.
     """
     def __init__(
         self,
@@ -53,9 +56,11 @@ class TransformerEncoding(nn.Module):
         dim_feedforward: int,
         nhead: int,
         num_layers: int,
-        output_size: int
+        output_size: int,
+        max_seq_length: int | None = None
     ):
         super().__init__()
+        self.max_seq_length = max_seq_length
         self.transformer_encoder = torch.nn.TransformerEncoder(
             encoder_layer=torch.nn.TransformerEncoderLayer(
                 d_model=d_model,
@@ -72,6 +77,11 @@ class TransformerEncoding(nn.Module):
         )
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
+        X = (
+            X[..., :self.max_seq_length, :]
+            if self.max_seq_length is not None
+            else X
+        )
         encoded = self.transformer_encoder(X)
         logits = self.linear(encoded.mean(dim=-2))
         return torch.sigmoid(logits)
