@@ -64,7 +64,10 @@ def get_datasets() -> tuple[td.Dataset, td.Dataset]:
     """
     data, labels = load_data()
 
-    ordinal_encoder = OrdinalEncoder().fit(data[encoded_features])
+    ordinal_encoder = OrdinalEncoder(
+        handle_unknown="use_encoded_value",
+        unknown_value=-1
+    ).fit(data[encoded_features])
 
     sessions_dataset = SessionsDataSet(
         df=data,
