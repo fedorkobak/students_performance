@@ -29,6 +29,19 @@ encoded_features = [
 ]
 
 
+def process_model_inputs(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Initial processing of information.
+    """
+    # Counting a delay of the event
+    data["event_delay"] = (
+        data["elapsed_time"] - data["elapsed_time"].shift(1)
+    ).fillna(0)
+
+    data[raw_features] = data[raw_features].fillna(-1)
+    return data
+
+
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Loads and prepares data for use in subsequent steps.
@@ -39,16 +52,10 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
         - Input data for the model.
         - Labels of the model.
     """
-    train = pd.read_parquet(Path()/".tmp"/"train.parquet")
-    train_labels = pd.read_parquet(Path()/".tmp"/"train_labels.parquet")
+    data = process_model_inputs(pd.read_parquet(Path()/".tmp"/"train.parquet"))
+    labels = pd.read_parquet(Path()/".tmp"/"train_labels.parquet")
 
-    # Counting a delay of the event
-    train["event_delay"] = (
-        train["elapsed_time"] - train["elapsed_time"].shift(1)
-    ).fillna(0)
-
-    train[raw_features] = train[raw_features].fillna(-1)
-    return train, train_labels
+    return data, labels
 
 
 def get_datasets() -> tuple[td.Dataset, td.Dataset]:
