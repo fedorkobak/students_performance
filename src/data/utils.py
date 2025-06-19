@@ -123,7 +123,7 @@ class SessionsDataSet(Dataset):
         sessions_for_id = self.groped_df[my_id]
         X = sessions_df_to_torch(
             df=sessions_for_id,
-            raw_features=["b"],
+            raw_features=self.raw_features,
             cat_features_encoder=self.cat_features_encoder
         )
 
