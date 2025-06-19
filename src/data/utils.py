@@ -6,6 +6,38 @@ import torch
 from torch.utils.data import Dataset
 
 
+def sessions_df_to_torch(
+    df: pd.DataFrame,
+    raw_features: list[str],
+    cat_features_encoder: OrdinalEncoder
+) -> torch.Tensor:
+    """
+    Transform the dataframe representing the specific session's actions to a
+    torch.Tensor.
+
+    Parameters
+    ----------
+    df: pd.DataFrame,
+        Data frame. It is supposed to show the actions of the one session.
+    raw_features: list[str],
+        Features that must be pushed to the next stage without any
+        transformation.
+    cat_features_encoder: OrdinalEncoder
+        The sklearn OrdinalEncoder that transforms categorical data.
+    """
+    raw_features = torch.tensor(
+        df[raw_features].values,
+        dtype=torch.float32
+    )
+    cat_features = torch.tensor(
+        cat_features_encoder.transform(
+            df[cat_features_encoder.feature_names_in_]
+        ),
+        dtype=torch.float32
+    )
+    return torch.concat([raw_features, cat_features], axis=1)
+
+
 class SessionsDataSet(Dataset):
     """
     The dataset that takes a table of sessions and, in each iteration, returns
@@ -89,17 +121,11 @@ class SessionsDataSet(Dataset):
         my_id = self.sessions_ids[index]
 
         sessions_for_id = self.groped_df[my_id]
-        raw_features = torch.tensor(
-            sessions_for_id[self.raw_features].values,
-            dtype=torch.float32
+        X = sessions_df_to_torch(
+            df=sessions_for_id,
+            raw_features=["b"],
+            cat_features_encoder=self.cat_features_encoder
         )
-        cat_features = torch.tensor(
-            self.cat_features_encoder.transform(
-                sessions_for_id[self.cat_features_encoder.feature_names_in_]
-            ),
-            dtype=torch.float32
-        )
-        X = torch.concat([raw_features, cat_features], axis=1)
 
         y = torch.tensor(
             self.groped_labels[my_id]

@@ -1,10 +1,41 @@
 """Tests for data primitives"""
 import torch
 import pandas as pd
-from unittest import TestCase
 from sklearn.preprocessing import OrdinalEncoder
 
-from src.data.utils import SessionsDataSet, collate_sessions
+from src.data.utils import (
+    SessionsDataSet, collate_sessions, sessions_df_to_torch
+)
+
+import unittest
+from unittest import TestCase
+
+pd.set_option('future.no_silent_downcasting', True)
+
+
+class TestSessionsDfToTorch(TestCase):
+    """
+    Test src.data.utils.sessions_df_to_torch function.
+    """
+    session_df = pd.DataFrame({
+        "a": ["a", "a", "b"],
+        "b": [1, 2, 3]
+    })
+
+    encoder_mock = unittest.mock.Mock()
+    encoder_mock.feature_names_in_ = ["a"]
+    encoder_mock.transform = (
+        lambda df: df[["a"]].replace({"a": 1, "b": 2}).values.astype(float)
+    )
+
+    def test(self):
+        ans = sessions_df_to_torch(
+            df=self.session_df,
+            raw_features=["b"],
+            cat_features_encoder=self.encoder_mock
+        )
+        exp = torch.tensor([[1, 1], [2, 1], [3, 2]], dtype=torch.float32)
+        torch.testing.assert_close(ans, exp)
 
 
 class TestSessionsDataSet(TestCase):
