@@ -14,7 +14,7 @@ To deploy development envrionment use:
 
 - Install all necessary packages in your environment `pip isntall -e .`.
   - **Note**: This project uses PyTorch. Specify  the [build](https://pytorch.org/get-started/locally/) to be installed with the `--extra-index-url` parameter. Use `pip3 install --extra-index-url https://download.pytorch.org/whl/cpu -e .` for the most basic CPU installation.
-- Put the archive with training data in the `.tmp` folder and run `python3 procedure.py`.
+- Put the archive with [competition data](https://www.kaggle.com/competitions/predict-student-performance-from-game-play/data) (`predict-student-performance-from-game-play.zip`) in the `.tmp` folder and run `python3 procedure.py`.
 - Create `.env` file with following content:
 
 ```bash
@@ -36,7 +36,7 @@ Run the model fitting with `python3 -m src.fit`. To get help on the fit paramete
 For example, run the 10 epochs fitting process for the transformer model with two heads with command:
 
 ```bash
-python3 -m src.fit --epochs 10 transformer --nhead 2`
+python3 -m src.fit --epochs 10 transformer --nhead 2
 ```
 
 ## Run model
